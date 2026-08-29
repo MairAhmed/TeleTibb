@@ -1,91 +1,80 @@
 # TeleTibb
 
-TeleTibb is a research prototype for estimating heart rate and blood pressure
-from facial video. It combines computer vision, remote photoplethysmography
-(rPPG), signal processing, and pre-trained machine-learning models in a
-Streamlit interface.
+TeleTibb is a research prototype that estimates heart rate and blood pressure
+from facial video using remote photoplethysmography (rPPG), signal processing,
+and participant-grouped machine-learning models.
 
 > [!WARNING]
-> TeleTibb is an educational and research project, not a medical device. Its
-> output must not be used for diagnosis, treatment, or other medical decisions.
+> TeleTibb is not a medical device. Its estimates must not be used for
+> diagnosis, treatment, medication decisions, or emergency assessment.
 
-## How it works
+## Accuracy-focused pipeline
 
-1. **Capture:** OpenCV reads frames from the computer's default webcam.
-2. **Face detection:** A Haar cascade locates a face in each frame. The first
-   detected face is cropped and resized to `224 × 224`.
-3. **Signal extraction:** The application derives three rPPG signals from the
-   facial RGB values:
-   - POS (Plane-Orthogonal-to-Skin)
-   - CHROM (chrominance-based rPPG)
-   - ICA (Independent Component Analysis)
-4. **Feature engineering:** The signals are filtered, normalized, padded, and
-   converted into statistical, frequency-domain, and wavelet features.
-5. **Prediction:** Pre-trained Random Forest models estimate heart rate,
-   systolic blood pressure, and diastolic blood pressure using the extracted
-   features together with age and gender.
+1. **Quality-controlled capture:** OpenCV reads the local webcam for 30 seconds.
+   The app tracks one smoothed face box, samples forehead and cheek regions,
+   rejects low-quality frames, and records a timestamp for every accepted
+   sample.
+2. **Time correction:** Accepted RGB samples are resampled onto a uniform time
+   grid using the measured frame rate rather than an assumed 30 FPS.
+3. **rPPG extraction:** POS, CHROM, and ICA generate independent pulse signals
+   from correctly ordered RGB values.
+4. **Heart rate:** A quality-weighted consensus combines the dominant
+   pulse-band frequency from all three methods. The measurement is rejected
+   when the methods disagree.
+5. **Blood pressure:** A shared feature pipeline extracts temporal,
+   frequency-domain, pulse morphology, signal agreement, age, and gender
+   features. The same Python functions are used during training and inference.
+6. **Uncertainty:** The interface displays signal quality and
+   participant-holdout error ranges instead of presenting bare point estimates.
 
-The application collects **900 frames containing a detected face** before
-running the prediction pipeline. At the configured sample rate of 30 FPS, this
-is approximately 30 seconds of usable face footage.
+The app requires at least 300 accepted frames. Poor lighting, blur, motion,
+camera timing gaps, or weak rPPG agreement produce a retry result rather than a
+prediction.
 
 ## Repository structure
 
 ```text
 TeleTibb/
 ├── Teletibb-main.py
-│   └── Streamlit app, webcam capture, rPPG extraction, and inference
+│   └── Streamlit interface, quality-controlled capture, and inference
+├── teletibb_signal.py
+│   └── Shared rPPG, heart-rate, preprocessing, and feature pipeline
+├── train_models.py
+│   └── Reproducible participant-grouped BP training and evaluation
 ├── DataLoader.csv
-│   └── Processed training data and physiological signal outputs
+│   └── Processed training signals, demographics, and reference values
+├── bp_systolic_model.pkl
+│   └── Versioned systolic model bundle used by the app
+├── bp_diastolic_model.pkl
+│   └── Versioned diastolic model bundle used by the app
+├── model_metrics.json
+│   └── Grouped cross-validation, holdout metrics, and feature schema
+├── requirements.txt
+│   └── Pinned runtime and training dependencies
+├── requirements-dev.txt
+│   └── Test and lint dependencies
+├── tests/
+│   └── Signal, feature, split, and model-bundle regression tests
 ├── preprocessing.ipynb
-│   └── Video preprocessing and facial-frame extraction experiments
 ├── Dataloader_with_batches.ipynb
-│   └── Dataset loading, batched video processing, and rPPG generation
 ├── Webcam_to_ICA.ipynb
-│   └── Webcam/rPPG experiments and blood-pressure model comparisons
 ├── Final_Model.ipynb
-│   └── Final feature-engineering, training, tuning, and evaluation workflow
-├── random_forest_model.pkl
-│   └── Trained heart-rate regressor used by the app
-├── best_rf_sys_model.pkl
-│   └── Trained systolic blood-pressure regressor used by the app
-├── best_rf_dia_model.pkl
-│   └── Trained diastolic blood-pressure regressor used by the app
+│   └── Historical research notebooks
 ├── haarcascade_frontalface_default.xml
-│   └── Haar cascade artifact retained for face-detection experiments
 └── van_Putten_Improving_Systolic_Blood_Pressure_Prediction_...pdf
-    └── Reference paper included with the project
 ```
 
-The application currently uses OpenCV's bundled frontal-face Haar cascade at
-runtime. The XML file in the repository is retained as a project artifact.
+`train_models.py` is now the authoritative training workflow. The notebooks are
+retained as research history and are not used to produce deployed artifacts.
 
-## Tech stack
+## Installation
 
-| Area | Main libraries |
-| --- | --- |
-| User interface | Streamlit |
-| Video and face processing | OpenCV, Pillow, scikit-image |
-| Numerical and data processing | NumPy, Pandas, SciPy |
-| Signal processing | SciPy Signal, PyWavelets |
-| Machine learning | scikit-learn, joblib |
-| Sequence preprocessing | TensorFlow/Keras |
-| Research notebooks | Jupyter, Matplotlib, PyTorch |
+Requirements:
 
-## Getting started
-
-### Requirements
-
-- Python 3 and `pip`
-- A webcam available as the computer's default OpenCV camera (`VideoCapture(0)`)
-- A desktop environment capable of opening the Streamlit application
-
-The webcam is opened by the Python process, not through the browser's media
-permissions. Run the app on the same computer that has the camera attached.
-
-### Installation
-
-Clone the repository and create an isolated environment:
+- Python 3.10
+- `pip`
+- a webcam available to OpenCV as `VideoCapture(0)`
+- a local desktop session
 
 ```bash
 git clone https://github.com/MairAhmed/TeleTibb.git
@@ -94,82 +83,99 @@ cd TeleTibb
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Install the packages imported by the Streamlit application:
+The webcam is opened by the Python process, not through browser media
+permissions. Run Streamlit on the computer that has the camera attached.
 
-```bash
-python -m pip install \
-  streamlit streamlit-webrtc \
-  opencv-python pillow scikit-image matplotlib \
-  numpy pandas scipy pywavelets \
-  scikit-learn==1.3.0 joblib tensorflow
-```
-
-The model artifacts were serialized with scikit-learn 1.3.0, so matching that
-version avoids model-persistence compatibility warnings.
-
-### Run the application
-
-Run this command from the repository root so the app can find the three
-committed model files:
+## Run the application
 
 ```bash
 python -m streamlit run Teletibb-main.py
 ```
 
-Streamlit will print the local application URL, normally
-`http://localhost:8501`.
+Then:
 
-### Take a measurement
+1. enter an age and select the demographic value used by the research model;
+2. select **Start measurement**;
+3. keep one face centered and still in even lighting for 30 seconds;
+4. review the estimate, quality score, uncertainty, and diagnostics.
 
-1. Enter an age.
-2. Select a gender.
-3. Position one face clearly in front of the webcam.
-4. Select **Start** and remain still while 900 detected-face frames are
-   collected.
-5. Wait for the estimated heart rate, systolic pressure, and diastolic
-   pressure to appear.
+## Reproduce the models
 
-Even lighting, limited motion, and a consistently visible face will produce a
-cleaner input signal. Capture duration may exceed 30 seconds when frames do not
-contain a detectable face.
+The training command safely parses the committed signals, constructs the same
+54-feature schema used by the app, removes participant leakage, and regenerates
+both model bundles and the metrics report:
 
-## Data and model development
+```bash
+python train_models.py
+```
 
-`DataLoader.csv` contains demographic information, raw/derived physiological
-signals, blood-pressure targets, and heart-rate values. The primary columns
-include:
+For a faster development run with fewer trees:
 
-- participant ID, gender, and age;
-- PPG, ICA, CHROM, and POS signal sequences;
-- systolic and diastolic blood pressure;
-- signal-specific and ground-truth heart rates.
+```bash
+python train_models.py --quick
+```
 
-The notebooks represent stages of the research workflow rather than a single
-automated pipeline:
+Training uses:
 
-| Notebook | Purpose |
-| --- | --- |
-| `preprocessing.ipynb` | Detect, crop, resize, and collect facial video frames |
-| `Dataloader_with_batches.ipynb` | Load recordings in batches and generate ICA, CHROM, and POS outputs |
-| `Webcam_to_ICA.ipynb` | Explore real-time capture, rPPG methods, and candidate regressors |
-| `Final_Model.ipynb` | Prepare features, tune regressors with grid search, and evaluate BP predictions |
+- a 79-participant development partition;
+- grouped five-fold cross-validation keyed by `GUID`;
+- an untouched 20-participant holdout partition;
+- mean and demographics-only baselines;
+- Ridge, Random Forest, Extra Trees, and Gradient Boosting candidates;
+- model selection by grouped validation MAE;
+- final refitting on all available rows after holdout evaluation.
 
-The committed `.pkl` files are the artifacts consumed by
-`Teletibb-main.py`; retraining is not required to run the application.
+No participant appears in both development and holdout data. Feature order and
+model schema are checked by the app; dependency version, validation metadata,
+and uncertainty are stored with each model bundle.
 
-## Current limitations
+## Current participant-holdout results
 
-- Predictions depend heavily on lighting, movement, camera quality, and face
-  detection.
-- The application assumes a 30 FPS sample rate and a single primary face.
-- Webcam capture uses the first local camera and does not currently expose a
-  camera selector.
-- Model artifacts are committed directly to the repository and no reproducible
-  dependency lock file is currently provided.
-- The notebooks may reference experiment-specific datasets, paths, or optional
-  packages that are not required by the Streamlit app.
+These results are from the committed `model_metrics.json`, not the historical
+row-level notebook split:
+
+| Target | Selected model | Grouped CV MAE | Holdout MAE | Holdout RMSE | Bias | 90th-percentile absolute error |
+| --- | --- | ---: | ---: | ---: | ---: | ---: |
+| Systolic | Extra Trees | 15.88 mmHg | 15.63 mmHg | 19.73 mmHg | +3.38 mmHg | 32.34 mmHg |
+| Diastolic | Random Forest | 8.97 mmHg | 8.04 mmHg | 11.60 mmHg | -1.34 mmHg | 20.34 mmHg |
+
+These results show that the project is not accurate enough for clinical use.
+They are intentionally reported because participant-grouped evaluation is more
+trustworthy than selecting a model from a random row split.
+
+## Automated checks
+
+```bash
+python -m pip install -r requirements-dev.txt
+python -m pytest
+python -m ruff check .
+```
+
+## Data and validation limitations
+
+- `DataLoader.csv` contains only 201 rows from 99 participants.
+- Most participants have repeated rows with the same BP target, making
+  participant grouping essential.
+- The raw source videos and synchronized reference acquisition workflow are not
+  included. Historical signals therefore cannot be regenerated with the new
+  RGB-correct, tracked-ROI capture pipeline.
+- The deployed capture pipeline and historical processed signals still have an
+  unavoidable acquisition-domain mismatch until data is recollected or raw
+  videos are reprocessed.
+- The data does not include enough structured device, lighting, movement, skin
+  tone, session, or signal-quality metadata for comprehensive subgroup
+  validation.
+- The current holdout contains only 20 participants, so its uncertainty
+  estimates are themselves imprecise.
+
+The next accuracy improvement requires synchronized video and validated cuff
+references from more independent participants, multiple sessions and BP states,
+and varied cameras and capture conditions. New data should be processed by
+`teletibb_signal.py` and evaluated with the grouped workflow before replacing
+the committed models.
 
 ## Research references
 

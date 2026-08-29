@@ -1,0 +1,191 @@
+{
+  "schema_version": 1,
+  "data_file": "DataLoader.csv",
+  "sample_rate": 30.0,
+  "rows_after_exact_deduplication": 201,
+  "participants": 99,
+  "feature_count": 54,
+  "feature_names": [
+    "ica_mean_absolute_amplitude",
+    "ica_interquartile_range",
+    "ica_peak_to_peak",
+    "ica_median_absolute_difference",
+    "ica_skew",
+    "ica_kurtosis",
+    "ica_derivative_rms",
+    "ica_dominant_frequency_hz",
+    "ica_dominant_frequency_bpm",
+    "ica_peak_power_ratio",
+    "ica_pulse_snr_db",
+    "ica_spectral_entropy",
+    "ica_peak_interval_mean_seconds",
+    "ica_peak_interval_std_seconds",
+    "ica_peak_interval_cv",
+    "chrom_mean_absolute_amplitude",
+    "chrom_interquartile_range",
+    "chrom_peak_to_peak",
+    "chrom_median_absolute_difference",
+    "chrom_skew",
+    "chrom_kurtosis",
+    "chrom_derivative_rms",
+    "chrom_dominant_frequency_hz",
+    "chrom_dominant_frequency_bpm",
+    "chrom_peak_power_ratio",
+    "chrom_pulse_snr_db",
+    "chrom_spectral_entropy",
+    "chrom_peak_interval_mean_seconds",
+    "chrom_peak_interval_std_seconds",
+    "chrom_peak_interval_cv",
+    "pos_mean_absolute_amplitude",
+    "pos_interquartile_range",
+    "pos_peak_to_peak",
+    "pos_median_absolute_difference",
+    "pos_skew",
+    "pos_kurtosis",
+    "pos_derivative_rms",
+    "pos_dominant_frequency_hz",
+    "pos_dominant_frequency_bpm",
+    "pos_peak_power_ratio",
+    "pos_pulse_snr_db",
+    "pos_spectral_entropy",
+    "pos_peak_interval_mean_seconds",
+    "pos_peak_interval_std_seconds",
+    "pos_peak_interval_cv",
+    "ica_chrom_correlation",
+    "ica_pos_correlation",
+    "chrom_pos_correlation",
+    "heart_rate_median_bpm",
+    "heart_rate_spread_bpm",
+    "peak_power_ratio_mean",
+    "pulse_snr_mean_db",
+    "age",
+    "gender"
+  ],
+  "split": {
+    "development_rows": 160,
+    "holdout_rows": 41,
+    "development_participants": 79,
+    "holdout_participants": 20,
+    "participant_overlap": 0
+  },
+  "targets": {
+    "systolic": {
+      "baselines": {
+        "mean": {
+          "grouped_cv_mae_mean": 19.41455078125,
+          "grouped_cv_mae_standard_deviation": 3.5628980983023806
+        },
+        "demographics_random_forest": {
+          "grouped_cv_mae_mean": 16.42264196817746,
+          "grouped_cv_mae_standard_deviation": 2.7171770599313163
+        }
+      },
+      "target": "systolic",
+      "selected_model": "extra_trees",
+      "candidate_results": {
+        "ridge": {
+          "grouped_cv_mae_mean": 16.464408630465293,
+          "grouped_cv_mae_standard_deviation": 2.9955938686210173,
+          "best_parameters": {
+            "model__alpha": 100.0
+          }
+        },
+        "random_forest": {
+          "grouped_cv_mae_mean": 16.5042726832693,
+          "grouped_cv_mae_standard_deviation": 2.0387895351088092,
+          "best_parameters": {
+            "model__max_depth": null,
+            "model__max_features": 0.7,
+            "model__min_samples_leaf": 4
+          }
+        },
+        "extra_trees": {
+          "grouped_cv_mae_mean": 15.878758232457164,
+          "grouped_cv_mae_standard_deviation": 2.583726425503546,
+          "best_parameters": {
+            "model__max_depth": 6,
+            "model__max_features": 0.7,
+            "model__min_samples_leaf": 4
+          }
+        },
+        "gradient_boosting": {
+          "grouped_cv_mae_mean": 17.16701754454676,
+          "grouped_cv_mae_standard_deviation": 2.424795407965178,
+          "best_parameters": {
+            "model__learning_rate": 0.03,
+            "model__max_depth": 2,
+            "model__min_samples_leaf": 3,
+            "model__n_estimators": 100
+          }
+        }
+      },
+      "holdout_metrics": {
+        "mae": 15.6318102111251,
+        "rmse": 19.730712120637993,
+        "bias": 3.375101609115514,
+        "error_standard_deviation": 19.43989943172641,
+        "correlation": 0.43424229194547653,
+        "absolute_error_p90": 32.344340888278396
+      }
+    },
+    "diastolic": {
+      "baselines": {
+        "mean": {
+          "grouped_cv_mae_mean": 9.5564453125,
+          "grouped_cv_mae_standard_deviation": 2.570490935372897
+        },
+        "demographics_random_forest": {
+          "grouped_cv_mae_mean": 9.067406140352224,
+          "grouped_cv_mae_standard_deviation": 1.585435185722639
+        }
+      },
+      "target": "diastolic",
+      "selected_model": "random_forest",
+      "candidate_results": {
+        "ridge": {
+          "grouped_cv_mae_mean": 9.390820153439545,
+          "grouped_cv_mae_standard_deviation": 2.121502344832566,
+          "best_parameters": {
+            "model__alpha": 100.0
+          }
+        },
+        "random_forest": {
+          "grouped_cv_mae_mean": 8.969577857623005,
+          "grouped_cv_mae_standard_deviation": 1.729021196495947,
+          "best_parameters": {
+            "model__max_depth": null,
+            "model__max_features": 0.7,
+            "model__min_samples_leaf": 4
+          }
+        },
+        "extra_trees": {
+          "grouped_cv_mae_mean": 9.201777700073539,
+          "grouped_cv_mae_standard_deviation": 1.8214303862563885,
+          "best_parameters": {
+            "model__max_depth": 6,
+            "model__max_features": 0.7,
+            "model__min_samples_leaf": 2
+          }
+        },
+        "gradient_boosting": {
+          "grouped_cv_mae_mean": 9.198286012997574,
+          "grouped_cv_mae_standard_deviation": 1.3668520657780217,
+          "best_parameters": {
+            "model__learning_rate": 0.03,
+            "model__max_depth": 3,
+            "model__min_samples_leaf": 3,
+            "model__n_estimators": 100
+          }
+        }
+      },
+      "holdout_metrics": {
+        "mae": 8.039344171247008,
+        "rmse": 11.598893839876688,
+        "bias": -1.3432896297917354,
+        "error_standard_deviation": 11.520846812592525,
+        "correlation": 0.05149065353826936,
+        "absolute_error_p90": 20.340920392107947
+      }
+    }
+  }
+}
